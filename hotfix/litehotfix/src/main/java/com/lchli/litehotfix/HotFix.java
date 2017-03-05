@@ -1,7 +1,6 @@
 package com.lchli.litehotfix;
 
 import android.content.Context;
-import android.os.Environment;
 
 import org.apache.commons.io.FileUtils;
 
@@ -39,7 +38,7 @@ public class HotFix {
                 dex.createNewFile();//create a empty dex.
             }
             patchDex = dex.getAbsolutePath();
-//change class loader,s parent loader.
+          //change class loader,s parent loader.
             Class<?> class_ActivityThread = Class.forName("android.app.ActivityThread");
             Method method_currentActivityThread = class_ActivityThread.getDeclaredMethod("currentActivityThread");
             method_currentActivityThread.setAccessible(true);
