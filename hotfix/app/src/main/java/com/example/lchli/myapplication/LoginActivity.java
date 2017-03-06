@@ -90,7 +90,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                HotFix.installPatch(Environment.getExternalStorageDirectory()+"/classes.dex",0,0);
+                HotFix.installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
+                    @Override
+                    public void onFinish(boolean isSuccess) {
+                        Toast.makeText(getApplicationContext(), "patch result:" + isSuccess, Toast.LENGTH_LONG).show();
+                        if (isSuccess) {
+                            System.exit(0);
+                        }
+                    }
+                });
             }
         });
 
@@ -98,8 +106,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
     }
 
-    private void showtoast(){
-        Toast.makeText(this,"fffffffffff------------------------------",1).show();
+    private void showtoast() {
+        Toast.makeText(this, "HOT FIX---------------------------", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {
