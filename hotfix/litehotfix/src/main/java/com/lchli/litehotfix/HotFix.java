@@ -24,21 +24,34 @@ import dalvik.system.PathClassLoader;
 
 public class HotFix {
 
-    private static String patchDex;
-    private static String patchDirectory;
-    private static String infoFilePath;
+    private String patchDex;
+    private String patchDirectory;
+    private String infoFilePath;
+    private int currentAppVersion;
+    private Context baseContext;
 
-    private static int currentAppVersion = 0;
+    private static volatile HotFix fix;
 
-    /***
-     * should call this on {@code Application#attachBaseContext}
-     *
-     * @param base
-     */
-    public static void init(Context base) {
+    public static HotFix instance(Context base) {
+        if (fix != null) {
+            return fix;
+        }
 
+        synchronized (HotFix.class) {
+            if (fix == null) {
+                fix = new HotFix(base);
+            }
+        }
+        return fix;
+
+    }
+
+
+    private HotFix(Context base) {
         try {
+            baseContext=base;
             currentAppVersion = base.getPackageManager().getPackageInfo(base.getPackageName(), PackageManager.GET_CONFIGURATIONS).versionCode;
+            log("parse currentAppVersion=" + currentAppVersion);
 
             File patchDir = new File(base.getCacheDir().getParentFile(), "patch");
             if (!patchDir.exists()) {
@@ -54,6 +67,23 @@ public class HotFix {
 
             File dex = new File(patchDir, "patch.dex");
             patchDex = dex.getAbsolutePath();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /***
+     * should call this on {@code Application#attachBaseContext}
+     *
+     *
+     */
+    public void init() {
+
+        try {
+
+            File dex = new File(patchDex);
             if (!dex.exists()) {
                 log("no patch dex file");
                 return;//no patch,so we do not install.
@@ -78,7 +108,7 @@ public class HotFix {
 
             Method method_get = mPackagesObj.getClass().getDeclaredMethod("get", Object.class);
             method_get.setAccessible(true);
-            final WeakReference loadedApkRef = (WeakReference) method_get.invoke(mPackagesObj, base.getPackageName());
+            final WeakReference loadedApkRef = (WeakReference) method_get.invoke(mPackagesObj, baseContext.getPackageName());
             Object loadedApk = loadedApkRef.get();
 
             Field field_mClassLoader = loadedApk.getClass().getDeclaredField("mClassLoader");
@@ -89,11 +119,11 @@ public class HotFix {
             field_parent.setAccessible(true);
 
 
-            File dexopt = new File(base.getCacheDir().getParentFile(), "dexopt");
+            File dexopt = new File(baseContext.getCacheDir().getParentFile(), "dexopt");
             if (!dexopt.exists()) {
                 dexopt.mkdirs();
             }
-            PathClassLoader loader = new PathClassLoader(patchDex, base.getClassLoader().getParent());
+            PathClassLoader loader = new PathClassLoader(patchDex, baseContext.getClassLoader().getParent());
             field_parent.set(originLoader, loader);
 
         } catch (Exception e) {
@@ -109,7 +139,7 @@ public class HotFix {
      * @param patchVersion
      * @param cb
      */
-    public static void installPatch(final String patchDexPath, final int targetAppVersion, final int patchVersion, final InstallPatchCallback cb) {
+    public void installPatch(final String patchDexPath, final int targetAppVersion, final int patchVersion, final InstallPatchCallback cb) {
         new AsyncTask<Void, Void, Boolean>() {
             @Override
             protected Boolean doInBackground(Void... params) {
@@ -125,10 +155,11 @@ public class HotFix {
     }
 
 
-    private static boolean installPatchImpl(String patchDexPath, int targetAppVersion, int patchVersion) {
+    private boolean installPatchImpl(String patchDexPath, int targetAppVersion, int patchVersion) {
         if (patchDexPath == null) {
             throw new IllegalArgumentException("patchDexPath can not be null.");
         }
+
         if (targetAppVersion != currentAppVersion) {
             log("targetAppVersion not match.");
             return false;
@@ -173,7 +204,7 @@ public class HotFix {
         System.err.println("[*****************************]" + msg);
     }
 
-    private static PatchInfo getPatchInfo() {
+    private PatchInfo getPatchInfo() {
         File info = new File(infoFilePath);
         FileReader fileReader = null;
 

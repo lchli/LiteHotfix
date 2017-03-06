@@ -2,23 +2,8 @@ package com.example.lchli.myapplication;
 
 import android.app.Application;
 import android.content.Context;
-import android.os.Environment;
 
 import com.lchli.litehotfix.HotFix;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-import dalvik.system.DexClassLoader;
-import dalvik.system.PathClassLoader;
-
-import static android.R.attr.path;
 
 /**
  * Created by lchli on 2017/2/20.
@@ -39,7 +24,9 @@ public class App extends Application {
                 e.printStackTrace();
             }
         });
-        HotFix.init(base);
+
+        HotFix.instance(base).init();
+
         super.attachBaseContext(base);
     }
 

@@ -90,7 +90,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                HotFix.installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
+                HotFix.instance(getApplicationContext()).installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
                     @Override
                     public void onFinish(boolean isSuccess) {
                         Toast.makeText(getApplicationContext(), "patch result:" + isSuccess, Toast.LENGTH_LONG).show();
@@ -107,7 +107,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "HOT FIX---------------------------", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "dog fixgggg---------------------------", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {
