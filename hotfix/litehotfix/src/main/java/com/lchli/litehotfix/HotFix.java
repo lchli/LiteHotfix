@@ -33,6 +33,8 @@ import dalvik.system.PathClassLoader;
 
 public class HotFix {
 
+    public static boolean DEBUG = true;
+
     private String patchDex;
     private String patchDirectory;
     private String infoFilePath;
@@ -266,7 +268,9 @@ public class HotFix {
     }
 
     private static void log(String msg) {
-        System.err.println("[*****************************]" + msg);
+        if (DEBUG) {
+            System.err.println("[*****************************]" + msg);
+        }
     }
 
     private PatchInfo getPatchInfo() {
