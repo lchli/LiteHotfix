@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -16,6 +17,7 @@ import android.os.Environment;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -67,7 +69,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         showtoast();
+        App.handler.post(new Runnable() {
+            @Override
+            public void run() {
+                System.err.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+
+            }
+        });
 
         setContentView(R.layout.activity_login);
         // Set up the login form.
@@ -90,12 +100,30 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                HotFix.instance(getApplicationContext()).installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
+                HotFix.instance().installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
                     @Override
                     public void onFinish(boolean isSuccess) {
-                        Toast.makeText(getApplicationContext(), "patch result:" + isSuccess, Toast.LENGTH_LONG).show();
+
                         if (isSuccess) {
-                            System.exit(0);
+
+                            new AlertDialog.Builder(LoginActivity.this)
+                                    .setMessage("已完成热修复，需要重启才能生效。是否现在重启？")
+                                    .setNegativeButton("稍后自己重启", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.dismiss();
+                                        }
+                                    })
+                                    .setPositiveButton("立即重启", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            System.exit(0);
+                                        }
+                                    }).create().show();
+
+
+                        } else {
+                            Toast.makeText(getApplicationContext(), "修复失败！", Toast.LENGTH_LONG).show();
                         }
                     }
                 });
@@ -107,7 +135,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "dog fixgggg---------------------------", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "new version-------------", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {

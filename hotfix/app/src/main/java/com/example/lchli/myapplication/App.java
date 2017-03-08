@@ -2,6 +2,7 @@ package com.example.lchli.myapplication;
 
 import android.app.Application;
 import android.content.Context;
+import android.os.Handler;
 
 import com.lchli.litehotfix.HotFix;
 
@@ -11,9 +12,13 @@ import com.lchli.litehotfix.HotFix;
 
 public class App extends Application {
 
+    public static App app;
+    public static Handler handler=new Handler();
+
     @Override
     public void onCreate() {
         super.onCreate();
+        app=this;
     }
 
     @Override
@@ -25,7 +30,7 @@ public class App extends Application {
             }
         });
 
-        HotFix.instance(base).init();
+        HotFix.instance().init(base);
 
         super.attachBaseContext(base);
     }

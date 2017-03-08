@@ -12,14 +12,23 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import dalvik.system.PathClassLoader;
 
 /**
  * Created by lchli on 2017/2/21.
+ * <p>
+ * 轻量级dex热修复。
+ * 1，不支持资源文件更改。
+ * 2，不支持manifest文件修改。
+ * 3，不支持so库修改。
+ * 4，不支持Application类修改（因为此类在hook之前就已经加载）。
  */
 
 public class HotFix {
@@ -28,28 +37,31 @@ public class HotFix {
     private String patchDirectory;
     private String infoFilePath;
     private int currentAppVersion;
-    private Context baseContext;
+    private String dexoptPath;
 
     private static volatile HotFix fix;
 
-    public static HotFix instance(Context base) {
+
+    private HotFix() {
+
+    }
+
+    public static HotFix instance() {
         if (fix != null) {
             return fix;
         }
 
         synchronized (HotFix.class) {
             if (fix == null) {
-                fix = new HotFix(base);
+                fix = new HotFix();
             }
         }
         return fix;
 
     }
 
-
-    private HotFix(Context base) {
+    private void initSetting(Context base) {
         try {
-            baseContext=base;
             currentAppVersion = base.getPackageManager().getPackageInfo(base.getPackageName(), PackageManager.GET_CONFIGURATIONS).versionCode;
             log("parse currentAppVersion=" + currentAppVersion);
 
@@ -68,6 +80,12 @@ public class HotFix {
             File dex = new File(patchDir, "patch.dex");
             patchDex = dex.getAbsolutePath();
 
+            final File dexopt = new File(base.getCacheDir().getParentFile(), "dexopt");
+            if (!dexopt.exists()) {
+                dexopt.mkdirs();
+            }
+            dexoptPath = dexopt.getAbsolutePath();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,14 +94,13 @@ public class HotFix {
 
     /***
      * should call this on {@code Application#attachBaseContext}
-     *
-     *
      */
-    public void init() {
+    public void init(Context base) {
 
         try {
+            initSetting(base);
 
-            File dex = new File(patchDex);
+            final File dex = new File(patchDex);
             if (!dex.exists()) {
                 log("no patch dex file");
                 return;//no patch,so we do not install.
@@ -108,26 +125,74 @@ public class HotFix {
 
             Method method_get = mPackagesObj.getClass().getDeclaredMethod("get", Object.class);
             method_get.setAccessible(true);
-            final WeakReference loadedApkRef = (WeakReference) method_get.invoke(mPackagesObj, baseContext.getPackageName());
+            final WeakReference loadedApkRef = (WeakReference) method_get.invoke(mPackagesObj, base.getPackageName());
             Object loadedApk = loadedApkRef.get();
 
             Field field_mClassLoader = loadedApk.getClass().getDeclaredField("mClassLoader");
             field_mClassLoader.setAccessible(true);
 
-            PathClassLoader originLoader = (PathClassLoader) field_mClassLoader.get(loadedApk);
+            final PathClassLoader originLoader = (PathClassLoader) field_mClassLoader.get(loadedApk);
             Field field_parent = ClassLoader.class.getDeclaredField("parent");
             field_parent.setAccessible(true);
 
-
-            File dexopt = new File(baseContext.getCacheDir().getParentFile(), "dexopt");
-            if (!dexopt.exists()) {
-                dexopt.mkdirs();
-            }
-            PathClassLoader loader = new PathClassLoader(patchDex, baseContext.getClassLoader().getParent());
-            field_parent.set(originLoader, loader);
+            //use a proxy to replace originLoader.
+            field_mClassLoader.set(loadedApk, new FixClassLoader(originLoader));
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * hook {@code  findClass} method.
+     */
+    private class FixClassLoader extends ClassLoader {
+
+        private ClassLoader delegate;
+        private Object dexPathList;
+        private Method m_findClass;
+        private List<Throwable> suppressedExceptions = new ArrayList<>();
+
+        public FixClassLoader(ClassLoader delegate) {
+            this.delegate = delegate;
+            try {
+                Class<?> cls_DexPathList = Class.forName("dalvik.system.DexPathList");
+                Constructor<?> cons_DexPathList = cls_DexPathList.getDeclaredConstructor(ClassLoader.class, String.class, String.class, File.class);
+                cons_DexPathList.setAccessible(true);
+
+                dexPathList = cons_DexPathList.newInstance(delegate, patchDex, patchDex, new File(dexoptPath));
+
+                m_findClass = cls_DexPathList.getDeclaredMethod("findClass", String.class, List.class);
+                m_findClass.setAccessible(true);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            try {
+                Class fixedClass = (Class) m_findClass.invoke(dexPathList, name, suppressedExceptions);//load fix class first.
+                if (fixedClass != null) {
+                    return fixedClass;
+                }
+                throw new ClassNotFoundException();
+
+            } catch (Exception e) {
+
+                try {
+                    Method m_findClass = delegate.getClass().getDeclaredMethod("findClass", String.class);//load original class.
+                    m_findClass.setAccessible(true);
+
+                    return (Class<?>) m_findClass.invoke(delegate, name);
+                } catch (Exception e2) {
+                    throw new ClassNotFoundException(e2.getMessage());
+                }
+            }
+
         }
     }
 
