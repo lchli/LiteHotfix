@@ -79,7 +79,7 @@ public class HotFix {
             }
             infoFilePath = info.getAbsolutePath();
 
-            File dex = new File(patchDir, "patch.dex");
+            File dex = new File(patchDir, "patch.zip");
             patchDex = dex.getAbsolutePath();
 
             final File dexopt = new File(base.getCacheDir().getParentFile(), "dexopt");
@@ -139,6 +139,19 @@ public class HotFix {
 
             //use a proxy to replace originLoader.
             field_mClassLoader.set(loadedApk, new FixClassLoader(originLoader));
+
+            /**
+             * below is a second fix way by replace pathList.
+             */
+//            Field pathList_field = BaseDexClassLoader.class.getDeclaredField("pathList");
+//            pathList_field.setAccessible(true);
+//
+//            Class<?> cls_DexPathList = Class.forName("dalvik.system.DexPathList");
+//            Constructor<?> cons_DexPathList = cls_DexPathList.getDeclaredConstructor(ClassLoader.class, String.class, String.class, File.class);
+//            cons_DexPathList.setAccessible(true);
+//            Object dexPathList = cons_DexPathList.newInstance(originLoader, patchDex, patchDex, new File(dexoptPath));
+//
+//            pathList_field.set(originLoader,dexPathList);
 
         } catch (Exception e) {
             e.printStackTrace();

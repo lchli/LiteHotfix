@@ -135,7 +135,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "new version-------------", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "fuck----", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {
