@@ -3,6 +3,7 @@ package com.lchli.litehotfix;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.text.TextUtils;
 
 import org.apache.commons.io.FileUtils;
@@ -29,6 +30,7 @@ import dalvik.system.PathClassLoader;
  * 2，不支持manifest文件修改。
  * 3，不支持so库修改。
  * 4，不支持Application类修改（因为此类在hook之前就已经加载）。
+ * todo:1,api 版本适配。
  */
 
 public class HotFix {
@@ -79,7 +81,7 @@ public class HotFix {
             }
             infoFilePath = info.getAbsolutePath();
 
-            File dex = new File(patchDir, "patch.zip");
+            File dex = new File(patchDir, "patch.rar");
             patchDex = dex.getAbsolutePath();
 
             final File dexopt = new File(base.getCacheDir().getParentFile(), "dexopt");
@@ -102,14 +104,14 @@ public class HotFix {
         try {
             initSetting(base);
 
-            final File dex = new File(patchDex);
-            if (!dex.exists()) {
+            final File patch = new File(patchDex);
+            if (!patch.exists()) {
                 log("no patch dex file");
                 return;//no patch,so we do not install.
             }
             PatchInfo patchInfo = getPatchInfo();
             if (patchInfo == null || patchInfo.targetAppVersion != currentAppVersion) {
-                dex.delete();//delete expired dex.
+                patch.delete();//delete expired dex.
                 log("patch dex file is expired.");
                 return;
             }
@@ -140,19 +142,6 @@ public class HotFix {
             //use a proxy to replace originLoader.
             field_mClassLoader.set(loadedApk, new FixClassLoader(originLoader));
 
-            /**
-             * below is a second fix way by replace pathList.
-             */
-//            Field pathList_field = BaseDexClassLoader.class.getDeclaredField("pathList");
-//            pathList_field.setAccessible(true);
-//
-//            Class<?> cls_DexPathList = Class.forName("dalvik.system.DexPathList");
-//            Constructor<?> cons_DexPathList = cls_DexPathList.getDeclaredConstructor(ClassLoader.class, String.class, String.class, File.class);
-//            cons_DexPathList.setAccessible(true);
-//            Object dexPathList = cons_DexPathList.newInstance(originLoader, patchDex, patchDex, new File(dexoptPath));
-//
-//            pathList_field.set(originLoader,dexPathList);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -176,6 +165,23 @@ public class HotFix {
                 cons_DexPathList.setAccessible(true);
 
                 dexPathList = cons_DexPathList.newInstance(delegate, patchDex, patchDex, new File(dexoptPath));
+                /**support mutidex*/
+                List<File> additionalClassPathEntries = FixUtils.getMutiDexs(new File(patchDirectory));
+                if (Build.VERSION.SDK_INT <= 13) {
+                    //ignore.
+
+                } else if (Build.VERSION.SDK_INT < 19) {
+
+                    ReflectUtils.expandFieldArray(dexPathList, "dexElements", FixUtils.makeDexElements14_18(dexPathList,
+                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath)));
+
+                } else if (Build.VERSION.SDK_INT >= 19) {
+
+                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+                    ReflectUtils.expandFieldArray(dexPathList, "dexElements", FixUtils.makeDexElements19_(dexPathList,
+                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
+                            suppressedExceptions));
+                }
 
                 m_findClass = cls_DexPathList.getDeclaredMethod("findClass", String.class, List.class);
                 m_findClass.setAccessible(true);
@@ -255,6 +261,7 @@ public class HotFix {
 
         try {
             FileUtils.copyFile(new File(patchDexPath), new File(patchDex));
+            FixUtils.performExtractions(new File(patchDex), new File(patchDirectory));//extract multi dex.
 
             fileWriter = new FileWriter(p);
             Properties properties = new Properties();
