@@ -32,7 +32,7 @@ import dalvik.system.PathClassLoader;
  * 1，不支持资源文件更改。
  * 2，不支持manifest文件修改。
  * 3，不支持so库修改。
- * 4，不支持Application类修改（因为此类在hook之前就已经加载）。
+ * 4，不支持Application类及其直接／间接引用到的类的修改（因为这些类在hook之前就已经加载）。
  * todo:1,api 版本适配。
  */
 

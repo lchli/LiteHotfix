@@ -15,11 +15,7 @@ public class App extends Application {
     public static App app;
     public static Handler handler=new Handler();
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        app=this;
-    }
+
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -33,7 +29,16 @@ public class App extends Application {
         HotFix.instance().init(base);
 
         super.attachBaseContext(base);
+
+        System.err.println("attachBaseContext");
     }
 
 
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        app=this;
+        System.err.println("onCreate");
+    }
 }

@@ -43,6 +43,7 @@ import static android.Manifest.permission.READ_CONTACTS;
  */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
+
     /**
      * Id to identity READ_CONTACTS permission request.
      */
@@ -135,7 +136,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "fixed multidex success--", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "00", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {
