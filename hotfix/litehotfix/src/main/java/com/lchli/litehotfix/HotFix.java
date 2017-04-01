@@ -6,6 +6,11 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.text.TextUtils;
 
+import com.lchli.litehotfix.refs.ActivityThreadRef;
+import com.lchli.litehotfix.refs.ClassLoaderRef;
+import com.lchli.litehotfix.refs.DexPathListRef;
+import com.lchli.litehotfix.refs.LoadedApkRef;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -13,11 +18,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import dalvik.system.PathClassLoader;
@@ -116,31 +119,13 @@ public class HotFix {
                 return;
             }
 
-            //change class loader,s parent loader.
-            Class<?> class_ActivityThread = Class.forName("android.app.ActivityThread");
-            Method method_currentActivityThread = class_ActivityThread.getDeclaredMethod("currentActivityThread");
-            method_currentActivityThread.setAccessible(true);
-            Object currentActivityThread = method_currentActivityThread.invoke(null);
-
-            final Class<?> cls = currentActivityThread.getClass();
-            Field field_mPackages = cls.getDeclaredField("mPackages");
-            field_mPackages.setAccessible(true);
-            Object mPackagesObj = field_mPackages.get(currentActivityThread);
-
-            Method method_get = mPackagesObj.getClass().getDeclaredMethod("get", Object.class);
-            method_get.setAccessible(true);
-            final WeakReference loadedApkRef = (WeakReference) method_get.invoke(mPackagesObj, base.getPackageName());
+            Map mPackages = ActivityThreadRef.mPackages();
+            final WeakReference loadedApkRef = (WeakReference) mPackages.get(base.getPackageName());
             Object loadedApk = loadedApkRef.get();
 
-            Field field_mClassLoader = loadedApk.getClass().getDeclaredField("mClassLoader");
-            field_mClassLoader.setAccessible(true);
-
-            final PathClassLoader originLoader = (PathClassLoader) field_mClassLoader.get(loadedApk);
-            Field field_parent = ClassLoader.class.getDeclaredField("parent");
-            field_parent.setAccessible(true);
-
+            final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
             //use a proxy to replace originLoader.
-            field_mClassLoader.set(loadedApk, new FixClassLoader(originLoader));
+            LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,37 +139,45 @@ public class HotFix {
 
         private ClassLoader delegate;
         private Object dexPathList;
-        private Method m_findClass;
         private List<Throwable> suppressedExceptions = new ArrayList<>();
 
         public FixClassLoader(ClassLoader delegate) {
             this.delegate = delegate;
             try {
-                Class<?> cls_DexPathList = Class.forName("dalvik.system.DexPathList");
-                Constructor<?> cons_DexPathList = cls_DexPathList.getDeclaredConstructor(ClassLoader.class, String.class, String.class, File.class);
-                cons_DexPathList.setAccessible(true);
 
-                dexPathList = cons_DexPathList.newInstance(delegate, patchDex, patchDex, new File(dexoptPath));
+                Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
+                dexPathList = DexPathListRef.newInstance(parameterTypes, delegate, patchDex, patchDex, new File(dexoptPath));
                 /**support mutidex*/
                 List<File> additionalClassPathEntries = FixUtils.getMutiDexs(new File(patchDirectory));
+                Object[] combined = null;
+
                 if (Build.VERSION.SDK_INT <= 13) {
                     //ignore.
 
                 } else if (Build.VERSION.SDK_INT < 19) {
 
-                    ReflectUtils.expandFieldArray(dexPathList, "dexElements", FixUtils.makeDexElements14_18(dexPathList,
+                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements14_18(
                             new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath)));
 
-                } else if (Build.VERSION.SDK_INT >= 19) {
+                } else if (Build.VERSION.SDK_INT <= 23) {
 
                     ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-                    ReflectUtils.expandFieldArray(dexPathList, "dexElements", FixUtils.makeDexElements19_(dexPathList,
+
+                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements19_23(
                             new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
                             suppressedExceptions));
+                } else {//7.0
+                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+
+                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements24_(
+                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
+                            suppressedExceptions, delegate));
                 }
 
-                m_findClass = cls_DexPathList.getDeclaredMethod("findClass", String.class, List.class);
-                m_findClass.setAccessible(true);
+                if (combined != null) {
+                    DexPathListRef.set_dexElements(dexPathList, combined);
+                }
+
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -196,7 +189,7 @@ public class HotFix {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             try {
-                Class fixedClass = (Class) m_findClass.invoke(dexPathList, name, suppressedExceptions);//load fix class first.
+                Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
                 if (fixedClass != null) {
                     return fixedClass;
                 }
@@ -205,10 +198,7 @@ public class HotFix {
             } catch (Exception e) {
 
                 try {
-                    Method m_findClass = delegate.getClass().getDeclaredMethod("findClass", String.class);//load original class.
-                    m_findClass.setAccessible(true);
-
-                    return (Class<?>) m_findClass.invoke(delegate, name);
+                    return ClassLoaderRef.findClass(delegate, name);
                 } catch (Exception e2) {
                     throw new ClassNotFoundException(e2.getMessage());
                 }

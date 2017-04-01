@@ -135,7 +135,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "fuck--88888--", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "fixed multidex success--", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {

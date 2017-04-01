@@ -9,8 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +18,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import static android.content.ContentValues.TAG;
-import static com.lchli.litehotfix.ReflectUtils.findMethod;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
 /**
@@ -36,27 +33,6 @@ public class FixUtils {
     private static final String EXTRACTED_SUFFIX = ".zip";
     private static final int MAX_EXTRACT_ATTEMPTS = 3;
 
-
-    static Object[] makeDexElements14_18(Object dexPathList, ArrayList<File> files, File optimizedDirectory) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-
-        Method makeDexElements = findMethod(dexPathList, "makeDexElements", ArrayList.class, File.class);
-
-        return (Object[]) makeDexElements.invoke(dexPathList, files, optimizedDirectory);
-
-    }
-
-     static Object[] makeDexElements19_(
-            Object dexPathList, ArrayList<File> files, File optimizedDirectory,
-            ArrayList<IOException> suppressedExceptions)
-            throws IllegalAccessException, InvocationTargetException,
-            NoSuchMethodException {
-        Method makeDexElements =
-                findMethod(dexPathList, "makeDexElements", ArrayList.class, File.class,
-                        ArrayList.class);
-
-        return (Object[]) makeDexElements.invoke(dexPathList, files, optimizedDirectory,
-                suppressedExceptions);
-    }
 
     /**
      * @param sourceApk
