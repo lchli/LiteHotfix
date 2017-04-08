@@ -1,4 +1,4 @@
-package com.lchli.litehotfix;
+package com.lchli.litehotfix.util;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;

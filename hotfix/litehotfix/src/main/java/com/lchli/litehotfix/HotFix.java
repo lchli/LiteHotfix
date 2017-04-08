@@ -6,10 +6,12 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.text.TextUtils;
 
-import com.lchli.litehotfix.refs.ActivityThreadRef;
-import com.lchli.litehotfix.refs.ClassLoaderRef;
-import com.lchli.litehotfix.refs.DexPathListRef;
-import com.lchli.litehotfix.refs.LoadedApkRef;
+import com.lchli.litehotfix.ref.ActivityThreadRef;
+import com.lchli.litehotfix.ref.ClassLoaderRef;
+import com.lchli.litehotfix.ref.DexPathListRef;
+import com.lchli.litehotfix.ref.LoadedApkRef;
+import com.lchli.litehotfix.util.FixUtils;
+import com.lchli.litehotfix.util.ReflectUtils;
 
 import org.apache.commons.io.FileUtils;
 
@@ -34,6 +36,8 @@ import dalvik.system.PathClassLoader;
  * 3，不支持so库修改。
  * 4，不支持Application类及其直接／间接引用到的类的修改（因为这些类在hook之前就已经加载）。
  * todo:1,api 版本适配。
+ * fix proguard use :--applyMapping oldmaping.txt
+ * in proguard.txt
  */
 
 public class HotFix {

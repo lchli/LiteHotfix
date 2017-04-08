@@ -72,7 +72,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
 
         showtoast();
-        App.handler.post(new Runnable() {
+        AppLike.handler.post(new Runnable() {
             @Override
             public void run() {
                 System.err.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");

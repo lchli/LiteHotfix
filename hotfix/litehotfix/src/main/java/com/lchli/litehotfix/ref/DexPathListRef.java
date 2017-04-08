@@ -1,8 +1,8 @@
-package com.lchli.litehotfix.refs;
+package com.lchli.litehotfix.ref;
 
 import android.annotation.TargetApi;
 
-import com.lchli.litehotfix.ReflectUtils;
+import com.lchli.litehotfix.util.ReflectUtils;
 
 import java.io.File;
 import java.io.IOException;

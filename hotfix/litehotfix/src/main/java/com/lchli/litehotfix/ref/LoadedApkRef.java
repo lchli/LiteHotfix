@@ -1,6 +1,6 @@
-package com.lchli.litehotfix.refs;
+package com.lchli.litehotfix.ref;
 
-import com.lchli.litehotfix.ReflectUtils;
+import com.lchli.litehotfix.util.ReflectUtils;
 
 /**
  * Created by lichenghang on 2017/4/1.

@@ -1,4 +1,4 @@
-package com.lchli.litehotfix;
+package com.lchli.litehotfix.util;
 
 import android.util.Log;
 
@@ -40,7 +40,7 @@ public class FixUtils {
      * @return
      * @throws IOException
      */
-    static List<File> performExtractions(File sourceApk, File dexDir) throws IOException {
+    public static List<File> performExtractions(File sourceApk, File dexDir) throws IOException {
         /**delete old dexs.*/
         List<File> oldDexFiles = getMutiDexs(dexDir);
         if (oldDexFiles != null) {
@@ -157,7 +157,7 @@ public class FixUtils {
 
     }
 
-    static List<File> getMutiDexs(File dexDir) {
+   public static List<File> getMutiDexs(File dexDir) {
 
         FileFilter filter = new FileFilter() {
 

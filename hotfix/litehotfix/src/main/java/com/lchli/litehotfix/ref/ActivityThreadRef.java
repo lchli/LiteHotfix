@@ -1,6 +1,6 @@
-package com.lchli.litehotfix.refs;
+package com.lchli.litehotfix.ref;
 
-import com.lchli.litehotfix.ReflectUtils;
+import com.lchli.litehotfix.util.ReflectUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
