@@ -31,4 +31,8 @@ dependencies {
     testCompile 'junit:junit:4.12'
 
     compile project(':litehotfix')
+
+    compile 'com.squareup.okhttp3:okhttp:3.7.0'
+
+    compile 'com.aliyun.ams:alicloud-android-hotfix:3.0.2'
 }

@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lchli.litehotfix.HotFix;
+import com.taobao.sophix.SophixManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +71,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SophixManager.getInstance().queryAndLoadNewPatch();
+
 
         showtoast();
         AppLike.handler.post(new Runnable() {
@@ -80,7 +83,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_login2);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();

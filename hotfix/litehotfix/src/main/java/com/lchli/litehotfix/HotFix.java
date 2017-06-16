@@ -2,11 +2,14 @@ package com.lchli.litehotfix;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.text.TextUtils;
 
 import com.lchli.litehotfix.ref.ActivityThreadRef;
+import com.lchli.litehotfix.ref.AssertManagerRef;
 import com.lchli.litehotfix.ref.ClassLoaderRef;
 import com.lchli.litehotfix.ref.DexPathListRef;
 import com.lchli.litehotfix.ref.LoadedApkRef;
@@ -128,6 +131,42 @@ public class HotFix {
             final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
             //use a proxy to replace originLoader.
             LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
+
+
+            //below:hook resource
+            AssetManager asset = base.getAssets();
+
+            ArrayList<String> oldpaths = new ArrayList<>();
+
+            int blockCount = AssertManagerRef.getStringBlockCount(asset);
+            log("blockCount:" + blockCount);
+
+
+            for (int i = 0; i < blockCount; ++i) {
+                String cookiePath = AssertManagerRef.getCookieName(asset, i + 1);
+                if (cookiePath != null && cookiePath.startsWith("/system/framework/")) {
+                    oldpaths.add(cookiePath);
+                }
+            }
+
+
+            AssertManagerRef.destroy(asset);
+
+            AssertManagerRef.init(asset, false);
+            AssertManagerRef.set_mStringBlocks(asset, null);
+
+            for (String p : oldpaths) {
+                log("system res path:" + p);
+                AssertManagerRef.addAssetPath(asset, p);
+            }
+            AssertManagerRef.addAssetPath(asset, patchDex);
+
+            AssertManagerRef.ensureStringBlocks(asset);
+
+
+            Resources resources = base.getResources();
+            resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+
 
         } catch (Exception e) {
             e.printStackTrace();
