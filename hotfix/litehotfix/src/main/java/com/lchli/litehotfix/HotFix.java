@@ -33,8 +33,7 @@ import dalvik.system.PathClassLoader;
 /**
  * Created by lchli on 2017/2/21.
  * <p>
- * 轻量级dex热修复。
- * 1，不支持资源文件更改。
+ * 轻量级热修复。
  * 2，不支持manifest文件修改。
  * 3，不支持so库修改。
  * fix proguard use :--applyMapping oldmaping.txt
