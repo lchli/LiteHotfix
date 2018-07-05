@@ -238,10 +238,13 @@ public class HotFix {
                 throw new ClassNotFoundException();
 
             } catch (Exception e) {
+                if(name.startsWith("com.lch.menote.note.ui.LocalNoteListAdp"))
+                e.printStackTrace();
 
                 try {
                     return ClassLoaderRef.findClass(delegate, name);
                 } catch (Exception e2) {
+                  //  e2.printStackTrace();
                     throw new ClassNotFoundException(e2.getMessage());
                 }
             }
