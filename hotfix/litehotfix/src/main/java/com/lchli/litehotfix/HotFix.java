@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lchli.litehotfix.ref.ActivityThreadRef;
 import com.lchli.litehotfix.ref.AssertManagerRef;
@@ -231,6 +232,7 @@ public class HotFix {
             try {
                 Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
                 if (fixedClass != null) {
+                    Log.e("hotfix","fixedClass=================================================:"+fixedClass.getName());
                     return fixedClass;
                 }
                 throw new ClassNotFoundException();
