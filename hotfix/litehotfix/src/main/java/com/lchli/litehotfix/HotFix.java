@@ -133,38 +133,38 @@ public class HotFix {
 
 
             //below:hook resource
-            AssetManager asset = base.getAssets();
-
-            ArrayList<String> oldpaths = new ArrayList<>();
-
-            int blockCount = AssertManagerRef.getStringBlockCount(asset);
-            log("blockCount:" + blockCount);
-
-
-            for (int i = 0; i < blockCount; ++i) {
-                String cookiePath = AssertManagerRef.getCookieName(asset, i + 1);
-                if (cookiePath != null && cookiePath.startsWith("/system/framework/")) {
-                    oldpaths.add(cookiePath);
-                }
-            }
-
-
-            AssertManagerRef.destroy(asset);
-
-            AssertManagerRef.init(asset, false);
-            AssertManagerRef.set_mStringBlocks(asset, null);
-
-            for (String p : oldpaths) {
-                log("system res path:" + p);
-                AssertManagerRef.addAssetPath(asset, p);
-            }
-            AssertManagerRef.addAssetPath(asset, patchDex);
-
-            AssertManagerRef.ensureStringBlocks(asset);
-
-
-            Resources resources = base.getResources();
-            resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+//            AssetManager asset = base.getAssets();
+//
+//            ArrayList<String> oldpaths = new ArrayList<>();
+//
+//            int blockCount = AssertManagerRef.getStringBlockCount(asset);
+//            log("blockCount:" + blockCount);
+//
+//
+//            for (int i = 0; i < blockCount; ++i) {
+//                String cookiePath = AssertManagerRef.getCookieName(asset, i + 1);
+//                if (cookiePath != null && cookiePath.startsWith("/system/framework/")) {
+//                    oldpaths.add(cookiePath);
+//                }
+//            }
+//
+//
+//            AssertManagerRef.destroy(asset);
+//
+//            AssertManagerRef.init(asset, false);
+//            AssertManagerRef.set_mStringBlocks(asset, null);
+//
+//            for (String p : oldpaths) {
+//                log("system res path:" + p);
+//                AssertManagerRef.addAssetPath(asset, p);
+//            }
+//            AssertManagerRef.addAssetPath(asset, patchDex);
+//
+//            AssertManagerRef.ensureStringBlocks(asset);
+//
+//
+//            Resources resources = base.getResources();
+//            resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
 
 
         } catch (Exception e) {
