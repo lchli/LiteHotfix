@@ -63,9 +63,17 @@ public class DexPathListRef {
 
     @TargetApi(24)
     public static Object[] makeDexElements24_(ArrayList<File> files, File optimizedDirectory, ArrayList<IOException> suppressedExceptions, ClassLoader classLoader) throws Exception {
-
-        return (Object[]) ReflectUtils.findMethod(clazz, "makeDexElements", ArrayList.class, File.class, ArrayList.class, ClassLoader.class)
-                .invoke(null, files, optimizedDirectory, suppressedExceptions, classLoader);
+        try {
+            return (Object[]) ReflectUtils.findMethod(clazz, "makeDexElements", ArrayList.class, File.class, ArrayList.class, ClassLoader.class)
+                    .invoke(null, files, optimizedDirectory, suppressedExceptions, classLoader);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            try {
+                return makeDexElements19_23(files, optimizedDirectory, suppressedExceptions);
+            }catch (Throwable ee){
+                return makeDexElements14_18(files, optimizedDirectory);
+            }
+        }
     }
 
     //for test.
