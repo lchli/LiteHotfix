@@ -32,7 +32,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lchli.litehotfix.HotFix;
-import com.taobao.sophix.SophixManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +70,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SophixManager.getInstance().queryAndLoadNewPatch();
+        //SophixManager.getInstance().queryAndLoadNewPatch();
 
 
         showtoast();

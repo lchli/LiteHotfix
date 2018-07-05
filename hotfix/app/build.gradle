@@ -34,5 +34,5 @@ dependencies {
 
     compile 'com.squareup.okhttp3:okhttp:3.7.0'
 
-    compile 'com.aliyun.ams:alicloud-android-hotfix:3.0.2'
+    //compile 'com.aliyun.ams:alicloud-android-hotfix:3.0.2'
 }
