@@ -131,7 +131,7 @@ public class HotFix {
             final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
             //use a proxy to replace originLoader.
             LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
-
+            log("set_mClassLoader success====================================");
 
             //below:hook resource
 //            AssetManager asset = base.getAssets();
@@ -230,6 +230,8 @@ public class HotFix {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             try {
+                Log.d("hotfix","findClass=================================================:"+name);
+
                 Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
                 if (fixedClass != null) {
                     Log.e("hotfix","fixedClass=================================================:"+fixedClass.getName());
@@ -238,7 +240,7 @@ public class HotFix {
                 throw new ClassNotFoundException();
 
             } catch (Exception e) {
-                if(name.startsWith("com.lch.menote.note.ui.LocalNoteListAdp"))
+                //if(name.startsWith("com.lch.menote.note.ui.LocalNoteListAdp"))
                 e.printStackTrace();
 
                 try {
