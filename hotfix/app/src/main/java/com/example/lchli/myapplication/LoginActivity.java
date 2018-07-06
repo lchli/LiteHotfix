@@ -31,6 +31,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.lch.menote.Modified;
+import com.lch.menote.NewP;
+import com.lch.menote.NewP2;
+import com.lch.menote.NewP3;
 import com.lchli.litehotfix.HotFix;
 
 import java.util.ArrayList;
@@ -41,6 +45,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 /**
  * A login screen that offers login via email/password.
  */
+@Modified
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
 
@@ -71,6 +76,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //SophixManager.getInstance().queryAndLoadNewPatch();
+        Toast.makeText(this,"new login33333",Toast.LENGTH_LONG).show();
+        //NewP.run(this);
+        //NewP2.run(this);
+        NewP3.run(this);
 
 
         showtoast();
@@ -82,7 +91,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        setContentView(R.layout.activity_login2);
+        setContentView(R.layout.activity_login2);//0x7f04001c
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
@@ -103,7 +112,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                HotFix.instance().installPatch(Environment.getExternalStorageDirectory() + "/app-debug.apk", 1, 0, new HotFix.InstallPatchCallback() {
+                HotFix.instance().installPatch(Environment.getExternalStorageDirectory() + "/classes.zip", 1, 0, new HotFix.InstallPatchCallback() {
                     @Override
                     public void onFinish(boolean isSuccess) {
 
@@ -138,7 +147,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private void showtoast() {
-        Toast.makeText(this, "00", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "00---fix=PPPPPPPPPPPPPPPPPP", Toast.LENGTH_LONG).show();
     }
 
     private void populateAutoComplete() {

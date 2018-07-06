@@ -22,9 +22,12 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -129,8 +132,31 @@ public class HotFix {
             Object loadedApk = loadedApkRef.get();
 
             final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
+            ClassLoader originLoaderParent = originLoader.getParent();
+            String nativeLibraryPath="";
+            try {
+                nativeLibraryPath = (String) originLoader.getClass().getMethod("getLdLibraryPath")
+                        .invoke(originLoader);
+            } catch (Throwable t) {
+
+            }
+            String[] args=new File(patchDirectory).list(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".dex");
+                }
+            });
+            //for(String s:args)
+            Log.e("dexs",patchDex+"");
+
+            IncrementalClassLoader.inject(originLoader,nativeLibraryPath,dexoptPath, Arrays.asList(patchDirectory+"/classes.dex"));
+
+            //setParent(originLoader,);
+
+            //ReflectUtils.findField(ClassLoader.class,"parent");
+
             //use a proxy to replace originLoader.
-            LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
+          //  LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
             log("set_mClassLoader success====================================");
 
             //below:hook resource
@@ -170,6 +196,20 @@ public class HotFix {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void setParent(ClassLoader classLoader, ClassLoader newParent) {
+        try {
+            Field parent = ClassLoader.class.getDeclaredField("parent");
+            parent.setAccessible(true);
+            parent.set(classLoader, newParent);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -227,6 +267,7 @@ public class HotFix {
         }
 
 
+
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             try {
@@ -234,9 +275,11 @@ public class HotFix {
 
                 Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
                 if (fixedClass != null) {
-                    Log.e("hotfix","fixedClass=================================================:"+fixedClass.getName());
+                    Log.e("hotfix","fixedClass=================================================:"+name);
                     return fixedClass;
                 }
+                Log.e("hotfix","fixedClass not found=================================================:"+name);
+
                 throw new ClassNotFoundException();
 
             } catch (Exception e) {

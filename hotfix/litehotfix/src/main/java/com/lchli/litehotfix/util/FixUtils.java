@@ -60,7 +60,7 @@ public class FixUtils {
 
             int secondaryNumber = 2;
 
-            ZipEntry dexFile = apk.getEntry(DEX_PREFIX + secondaryNumber + DEX_SUFFIX);
+            ZipEntry dexFile = apk.getEntry(DEX_PREFIX + "" + DEX_SUFFIX);
 
             while (dexFile != null) {
 
