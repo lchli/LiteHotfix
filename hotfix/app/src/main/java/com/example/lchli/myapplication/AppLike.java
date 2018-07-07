@@ -4,21 +4,15 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 
-import com.lchli.litehotfix.ApplicationLike;
-
 /**
  * Created by lchli on 2017/2/20.
  */
 
-public class AppLike extends ApplicationLike {
+public class AppLike extends Application {
 
     private static final String test = "love fixed";
 
     public static Handler handler = new Handler();
-
-    public AppLike(Application application) {
-        super(application);
-    }
 
 
     @Override

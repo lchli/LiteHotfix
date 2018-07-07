@@ -2,27 +2,19 @@ package com.lchli.litehotfix;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.lchli.litehotfix.ref.ActivityThreadRef;
-import com.lchli.litehotfix.ref.AssertManagerRef;
 import com.lchli.litehotfix.ref.ClassLoaderRef;
-import com.lchli.litehotfix.ref.DexPathListRef;
 import com.lchli.litehotfix.ref.LoadedApkRef;
-import com.lchli.litehotfix.util.FixUtils;
-import com.lchli.litehotfix.util.ReflectUtils;
 
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -32,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import dalvik.system.DexClassLoader;
 import dalvik.system.PathClassLoader;
 
 /**
@@ -92,7 +85,8 @@ public class HotFix {
             }
             infoFilePath = info.getAbsolutePath();
 
-            File dex = new File(patchDir, "patch.rar");
+            File dex = new File(patchDir, "patch.dex");
+
             patchDex = dex.getAbsolutePath();
 
             final File dexopt = new File(base.getCacheDir().getParentFile(), "dexopt");
@@ -132,31 +126,45 @@ public class HotFix {
             Object loadedApk = loadedApkRef.get();
 
             final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
-            ClassLoader originLoaderParent = originLoader.getParent();
-            String nativeLibraryPath="";
-            try {
-                nativeLibraryPath = (String) originLoader.getClass().getMethod("getLdLibraryPath")
-                        .invoke(originLoader);
-            } catch (Throwable t) {
+            // ClassLoader originLoaderParent = originLoader.getParent();
 
-            }
-            String[] args=new File(patchDirectory).list(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".dex");
-                }
-            });
-            //for(String s:args)
-            Log.e("dexs",patchDex+"");
+//            ClassLoader classLoader = HotFix.class.getClassLoader();
+//            String nativeLibraryPath = null;
+//            try {
+//                nativeLibraryPath = (String) classLoader.getClass().getMethod("getLdLibraryPath")
+//                        .invoke(classLoader);
+//
+//            } catch (Throwable t) {
+//                // nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
+//            }
+            String sourceDir = base.getApplicationInfo().sourceDir;
+            String nativeLibraryDir = base.getApplicationInfo().nativeLibraryDir;
 
-            IncrementalClassLoader.inject(originLoader,nativeLibraryPath,dexoptPath, Arrays.asList(patchDirectory+"/classes.dex"));
 
-            //setParent(originLoader,);
+            //Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
 
-            //ReflectUtils.findField(ClassLoader.class,"parent");
+//            Object dexPathList = DexPathListRef.newInstance(parameterTypes, originLoader,
+//                    createDexPath(Arrays.asList(patchDex, sourceDir)),
+//                    nativeLibraryDir, new File(dexoptPath));
+
+//            Field f_pathList = ReflectUtils.findField(originLoader.getClass(), "pathList");
+//
+//            f_pathList.set(originLoader, dexPathList);
+
+            Log.e("dexs", patchDex + "");
+
+
+            IncrementalClassLoader.inject(originLoader, nativeLibraryDir, dexoptPath, Arrays.asList(patchDex, sourceDir));
+
+
+            //DexClassLoader fixClassLoader= new MyDexClassLoader(patchDex,dexoptPath,null,originLoaderParent,originLoader);
+
+            // MyDexClassLoader  f=new MyDexClassLoader(originLoader);
+            //setParent(originLoader,fixClassLoader);
+
 
             //use a proxy to replace originLoader.
-          //  LoadedApkRef.set_mClassLoader(loadedApk, new FixClassLoader(originLoader));
+            //LoadedApkRef.set_mClassLoader(loadedApk, originLoader);
             log("set_mClassLoader success====================================");
 
             //below:hook resource
@@ -199,6 +207,26 @@ public class HotFix {
         }
     }
 
+    private static String createDexPath(List<String> dexes) {
+        StringBuilder pathBuilder = new StringBuilder();
+        boolean first = true;
+        for (String dex : dexes) {
+            if (first) {
+                first = false;
+            } else {
+                pathBuilder.append(File.pathSeparator);
+            }
+
+            pathBuilder.append(dex);
+        }
+
+
+        Log.v("hotfix", "Incremental dex path is "
+                + pathBuilder.toString());
+
+        return pathBuilder.toString();
+    }
+
     private static void setParent(ClassLoader classLoader, ClassLoader newParent) {
         try {
             Field parent = ClassLoader.class.getDeclaredField("parent");
@@ -213,51 +241,86 @@ public class HotFix {
         }
     }
 
+
+    private class MyDexClassLoader extends DexClassLoader {//orign->mydex(bootparent)->orign
+
+        private ClassLoader originLoader;
+
+        public MyDexClassLoader(String dexPath, String optimizedDirectory, String librarySearchPath, ClassLoader parent,
+                                ClassLoader originLoader) {
+            super(dexPath, optimizedDirectory, librarySearchPath, parent);
+            this.originLoader = originLoader;
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            try {
+                return super.findClass(name);
+            } catch (Throwable e) {
+//                try {
+//                    return ClassLoaderRef.findClass(originLoader, name);
+//                } catch (Exception e2) {
+//                    //  e2.printStackTrace();
+//                    throw new ClassNotFoundException(e2.getMessage());
+//                }
+
+                throw new ClassNotFoundException(e.getMessage());
+            }
+
+
+        }
+    }
+
     /**
      * hook {@code  findClass} method.
      */
     private class FixClassLoader extends ClassLoader {
 
-        private ClassLoader delegate;
+        private ClassLoader originloader;
+        private ClassLoader originloaderParent;
+        private ClassLoader myloader;
         private Object dexPathList;
         private List<Throwable> suppressedExceptions = new ArrayList<>();
 
         public FixClassLoader(ClassLoader delegate) {
-            this.delegate = delegate;
+            this.originloader = delegate;
+            this.originloaderParent = originloader.getParent();
             try {
 
-                Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
-                dexPathList = DexPathListRef.newInstance(parameterTypes, delegate, patchDex, patchDex, new File(dexoptPath));
+                myloader = new DexClassLoader(patchDex, dexoptPath, null, originloaderParent);
+
+                // Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
+                //dexPathList = DexPathListRef.newInstance(parameterTypes, delegate, patchDex, patchDex, new File(dexoptPath));
                 /**support mutidex*/
-                List<File> additionalClassPathEntries = FixUtils.getMutiDexs(new File(patchDirectory));
-                Object[] combined = null;
-
-                if (Build.VERSION.SDK_INT <= 13) {
-                    //ignore.
-
-                } else if (Build.VERSION.SDK_INT < 19) {
-
-                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements14_18(
-                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath)));
-
-                } else if (Build.VERSION.SDK_INT <= 23) {
-
-                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-
-                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements19_23(
-                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
-                            suppressedExceptions));
-                } else {//7.0
-                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-
-                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements24_(
-                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
-                            suppressedExceptions, delegate));
-                }
-
-                if (combined != null) {
-                    DexPathListRef.set_dexElements(dexPathList, combined);
-                }
+//                List<File> additionalClassPathEntries = FixUtils.getMutiDexs(new File(patchDirectory));
+//                Object[] combined = null;
+//
+//                if (Build.VERSION.SDK_INT <= 13) {
+//                    //ignore.
+//
+//                } else if (Build.VERSION.SDK_INT < 19) {
+//
+//                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements14_18(
+//                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath)));
+//
+//                } else if (Build.VERSION.SDK_INT <= 23) {
+//
+//                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+//
+//                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements19_23(
+//                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
+//                            suppressedExceptions));
+//                } else {//7.0
+//                    ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+//
+//                    combined = ReflectUtils.expandFieldArray(DexPathListRef.dexElements(dexPathList), DexPathListRef.makeDexElements24_(
+//                            new ArrayList<File>(additionalClassPathEntries), new File(dexoptPath),
+//                            suppressedExceptions, originloader));
+//                }
+//
+//                if (combined != null) {
+//                    DexPathListRef.set_dexElements(dexPathList, combined);
+//                }
 
 
             } catch (Exception e) {
@@ -267,18 +330,18 @@ public class HotFix {
         }
 
 
-
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             try {
-                Log.d("hotfix","findClass=================================================:"+name);
+                Log.d("hotfix", "findClass=================================================:" + name);
 
-                Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
+                // Class fixedClass = DexPathListRef.findClass(dexPathList, name, suppressedExceptions);//load fix class first.
+                Class fixedClass = ClassLoaderRef.findClass(myloader, name);//load fix class first.
                 if (fixedClass != null) {
-                    Log.e("hotfix","fixedClass=================================================:"+name);
+                    Log.e("hotfix", "fixedClass=================================================:" + name);
                     return fixedClass;
                 }
-                Log.e("hotfix","fixedClass not found=================================================:"+name);
+                Log.e("hotfix", "fixedClass not found=================================================:" + name);
 
                 throw new ClassNotFoundException();
 
@@ -287,9 +350,9 @@ public class HotFix {
                 e.printStackTrace();
 
                 try {
-                    return ClassLoaderRef.findClass(delegate, name);
+                    return ClassLoaderRef.findClass(originloader, name);
                 } catch (Exception e2) {
-                  //  e2.printStackTrace();
+                    //  e2.printStackTrace();
                     throw new ClassNotFoundException(e2.getMessage());
                 }
             }
@@ -340,8 +403,16 @@ public class HotFix {
         FileWriter fileWriter = null;
 
         try {
-            FileUtils.copyFile(new File(patchDexPath), new File(patchDex));
-            FixUtils.performExtractions(new File(patchDex), new File(patchDirectory));//extract multi dex.
+            File patchDexFile = new File(patchDex);
+            if (patchDexFile.exists()) {
+                patchDexFile.delete();
+            }
+
+            File dexopt = new File(dexoptPath);
+            FileUtils.deleteDirectory(dexopt);
+
+            FileUtils.copyFile(new File(patchDexPath), patchDexFile);
+            // FixUtils.performExtractions(new File(patchDex), new File(patchDirectory));//extract multi dex.
 
             fileWriter = new FileWriter(p);
             Properties properties = new Properties();

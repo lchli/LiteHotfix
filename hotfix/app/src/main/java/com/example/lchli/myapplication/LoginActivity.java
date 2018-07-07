@@ -32,8 +32,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lch.menote.Modified;
-import com.lch.menote.NewP;
-import com.lch.menote.NewP2;
 import com.lch.menote.NewP3;
 import com.lchli.litehotfix.HotFix;
 
@@ -76,13 +74,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //SophixManager.getInstance().queryAndLoadNewPatch();
-        Toast.makeText(this,"new login33333",Toast.LENGTH_LONG).show();
-        //NewP.run(this);
-        //NewP2.run(this);
+       // Toast.makeText(this,"ffff",Toast.LENGTH_LONG).show();
         NewP3.run(this);
 
 
-        showtoast();
+
         AppLike.handler.post(new Runnable() {
             @Override
             public void run() {
@@ -112,7 +108,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                HotFix.instance().installPatch(Environment.getExternalStorageDirectory() + "/classes.zip", 1, 0, new HotFix.InstallPatchCallback() {
+                HotFix.instance().installPatch(Environment.getExternalStorageDirectory() + "/classes.dex", 1, 0, new HotFix.InstallPatchCallback() {
                     @Override
                     public void onFinish(boolean isSuccess) {
 

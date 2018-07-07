@@ -131,14 +131,14 @@ public class IncrementalClassLoader extends ClassLoader {
     public static ClassLoader inject(
             ClassLoader classLoader, String nativeLibraryPath, String codeCacheDir,
             List<String> dexes) {
-        ClassLoader  bootloader=classLoader.getParent();
+       // ClassLoader  bootloader=classLoader.getParent();
 
         IncrementalClassLoader incrementalClassLoader =
                 new IncrementalClassLoader(classLoader, nativeLibraryPath, codeCacheDir, dexes);
 
         setParent(classLoader, incrementalClassLoader);
 
-        setParent(incrementalClassLoader, bootloader);
+       // setParent(incrementalClassLoader, bootloader);
 
         // This works as follows:
         // We're given the current class loader that's used to load the bootstrap application.

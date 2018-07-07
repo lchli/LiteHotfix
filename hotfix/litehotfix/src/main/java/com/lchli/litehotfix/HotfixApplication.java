@@ -7,6 +7,7 @@ import com.lchli.litehotfix.util.ReflectUtils;
 import com.lchli.litehotfix.util.ResUtil;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Created by lichenghang on 2017/4/8.
@@ -16,7 +17,7 @@ public class HotfixApplication extends Application {
 
     private static final String RES_APP_LIKE = "res_app_like";
 
-    private ApplicationLike mApplicationLike;
+    private Application mApplicationLike;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -39,9 +40,13 @@ public class HotfixApplication extends Application {
             String appLikeClassName = base.getString(id);
 
             Class appLikeCls = Class.forName(appLikeClassName, false, getClassLoader());
-            Constructor structor = ReflectUtils.findConstructor(appLikeCls, Application.class);
-            mApplicationLike = (ApplicationLike) structor.newInstance(this);
-            mApplicationLike.attachBaseContext(base);
+            Constructor structor = ReflectUtils.findConstructor(appLikeCls);
+            mApplicationLike = (Application) structor.newInstance();
+
+            Method m_attachBaseContext = ReflectUtils.findMethod(Application.class, "attachBaseContext", Context.class);
+            m_attachBaseContext.invoke(mApplicationLike,base);
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
