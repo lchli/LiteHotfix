@@ -10,7 +10,17 @@ import android.widget.Toast;
 @Modified
 public class NewP3 {
 
+    private String s;
+
     public static void run(Context context){
         Toast.makeText(context,"p 333",1).show();
+    }
+
+    private void haha(){
+        s="haha";
+    }
+
+    private void xxx(){
+        haha();
     }
 }
