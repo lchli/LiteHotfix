@@ -26,4 +26,6 @@ dependencies {
 
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'commons-io:commons-io:2.4'
+    compile 'com.android.support:appcompat-v7:23.1.1'
+
 }

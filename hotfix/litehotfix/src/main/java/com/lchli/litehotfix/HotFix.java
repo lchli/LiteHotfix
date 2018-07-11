@@ -6,26 +6,26 @@ import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.lchli.litehotfix.ref.ActivityThreadRef;
+import com.lchli.litehotfix.ref.BaseDexClassLoaderRef;
 import com.lchli.litehotfix.ref.ClassLoaderRef;
-import com.lchli.litehotfix.ref.LoadedApkRef;
+import com.lchli.litehotfix.ref.DexPathListRef;
+import com.lchli.litehotfix.util.ReflectUtils;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
+import dalvik.system.BaseDexClassLoader;
 import dalvik.system.DexClassLoader;
-import dalvik.system.PathClassLoader;
 
 /**
  * Created by lchli on 2017/2/21.
@@ -120,41 +120,19 @@ public class HotFix {
                 log("patch dex file is expired.");
                 return;
             }
-
-            Map mPackages = ActivityThreadRef.mPackages();
-            final WeakReference loadedApkRef = (WeakReference) mPackages.get(base.getPackageName());
-            Object loadedApk = loadedApkRef.get();
-
-            final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
-            // ClassLoader originLoaderParent = originLoader.getParent();
-
-//            ClassLoader classLoader = HotFix.class.getClassLoader();
-//            String nativeLibraryPath = null;
-//            try {
-//                nativeLibraryPath = (String) classLoader.getClass().getMethod("getLdLibraryPath")
-//                        .invoke(classLoader);
-//
-//            } catch (Throwable t) {
-//                // nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
-//            }
-            String sourceDir = base.getApplicationInfo().sourceDir;
-            String nativeLibraryDir = base.getApplicationInfo().nativeLibraryDir;
-
-
-            //Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
-
-//            Object dexPathList = DexPathListRef.newInstance(parameterTypes, originLoader,
-//                    createDexPath(Arrays.asList(patchDex, sourceDir)),
-//                    nativeLibraryDir, new File(dexoptPath));
-
-//            Field f_pathList = ReflectUtils.findField(originLoader.getClass(), "pathList");
-//
-//            f_pathList.set(originLoader, dexPathList);
-
             Log.e("dexs", patchDex + "");
 
+//            Map mPackages = ActivityThreadRef.mPackages();
+//            final WeakReference loadedApkRef = (WeakReference) mPackages.get(base.getPackageName());
+//            Object loadedApk = loadedApkRef.get();
 
-            IncrementalClassLoader.inject(originLoader, nativeLibraryDir, dexoptPath, Arrays.asList(patchDex, sourceDir));
+            fixByDexElements();
+            //fixByPathlist(base);
+            //fixByNewClassloader(base);
+
+            //  final PathClassLoader originLoader = (PathClassLoader) LoadedApkRef.mClassLoader(loadedApk);
+
+            // IncrementalClassLoader.inject(HotFix.class.getClassLoader(), nativeLibraryDir, dexoptPath, Arrays.asList(patchDex, sourceDir));
 
 
             //DexClassLoader fixClassLoader= new MyDexClassLoader(patchDex,dexoptPath,null,originLoaderParent,originLoader);
@@ -206,6 +184,83 @@ public class HotFix {
             e.printStackTrace();
         }
     }
+
+    private boolean fixByDexElements() {
+        ClassLoader originalClassLoader = HotFix.class.getClassLoader();
+        if (!(originalClassLoader instanceof BaseDexClassLoader)) {
+            log("originalClassLoader is not a BaseDexClassLoader.skip fix===");
+            return true;
+        }
+        final BaseDexClassLoader dexOriginalClassLoader = (BaseDexClassLoader) originalClassLoader;
+
+        Object pathList = BaseDexClassLoaderRef.pathList(dexOriginalClassLoader);
+        if (pathList == null) {
+            log("originalClassLoader's pathList is null.skip fix===");
+            return true;
+        }
+
+        boolean success = DexPathListRef.addDexPath(pathList, patchDex, new File(dexoptPath));
+        if (!success) {
+            log("addDexPath fail.skip fix===");
+            return true;
+        }
+
+        Object[] dexElements = DexPathListRef.dexElements(pathList);
+        if (dexElements == null) {
+            log("originalClassLoader's dexElements is null.skip fix===");
+            return true;
+        }
+
+        ArrayUtils.reverse(dexElements);
+
+//        ArrayList<File> fixDexFiles = new ArrayList<File>();
+//        fixDexFiles.add(new File(patchDex));
+//
+//        Object[] newDexElems = DexPathListRef.makeDexElementsAll(
+//                fixDexFiles, new File(dexoptPath));
+//        if (newDexElems == null) {
+//            log("make newDexElems is null.skip fix===");
+//            return true;
+//        }
+//
+//        Object[] combined = ReflectUtils.expandFieldArray(dexElements, newDexElems);
+//
+//        DexPathListRef.set_dexElements(pathList, combined);
+
+        return false;
+    }
+
+    private void fixByNewClassloader(Context base) {
+        String sourceDir = base.getApplicationInfo().sourceDir;
+        String nativeLibraryDir = base.getApplicationInfo().nativeLibraryDir;
+
+        ClassLoader originalClassLoader = HotFix.class.getClassLoader();
+        ClassLoader systemClassLoader = originalClassLoader.getParent();
+
+        String pathBuilder = createDexPath(Arrays.asList(patchDex, sourceDir));
+        BaseDexClassLoader fixClassLoader = new BaseDexClassLoader(pathBuilder, new File(dexoptPath),
+                nativeLibraryDir, systemClassLoader);
+
+        setParent(originalClassLoader, fixClassLoader);
+    }
+
+    private void fixByPathlist(Context base) throws Exception {//not good.
+        String sourceDir = base.getApplicationInfo().sourceDir;
+        String nativeLibraryDir = base.getApplicationInfo().nativeLibraryDir;
+
+        ClassLoader originalClassLoader = HotFix.class.getClassLoader();
+
+        Class[] parameterTypes = new Class[]{ClassLoader.class, String.class, String.class, File.class};
+
+        Object dexPathList = DexPathListRef.newInstance(parameterTypes, originalClassLoader,
+                createDexPath(Arrays.asList(patchDex, sourceDir)),
+                nativeLibraryDir, new File(dexoptPath));
+
+        Field f_pathList = ReflectUtils.findField(originalClassLoader.getClass(), "pathList");
+
+        f_pathList.set(originalClassLoader, dexPathList);
+    }
+
 
     private static String createDexPath(List<String> dexes) {
         StringBuilder pathBuilder = new StringBuilder();

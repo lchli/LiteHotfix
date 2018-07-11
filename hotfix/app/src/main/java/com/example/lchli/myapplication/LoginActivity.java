@@ -20,6 +20,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -32,7 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lch.menote.Modified;
-import com.lch.menote.NewP3;
+import com.lch.menote.NewP;
 import com.lchli.litehotfix.HotFix;
 
 import java.util.ArrayList;
@@ -75,7 +76,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         //SophixManager.getInstance().queryAndLoadNewPatch();
        // Toast.makeText(this,"ffff",Toast.LENGTH_LONG).show();
-        NewP3.run(this);
+        NewP.run(this);
+
+        Log.e("appn",getApplication().toString());
+        Log.e("appn",getApplicationInfo().name);
+        Log.e("appn",getApplicationInfo().sourceDir);
+        Log.e("appn",getApplicationInfo().loadLabel(getPackageManager())+"");
 
 
 
@@ -147,6 +153,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         Toast.makeText(this, "00---fix=PPPPPPPPPPPPPPPPPP", Toast.LENGTH_LONG).show();
     }
 
+    private static void showtoaststaticc() {
+        Log.e("tag","fff");
+    }
     private void populateAutoComplete() {
         if (!mayRequestContacts()) {
             return;
@@ -399,5 +408,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
         }
     }
+
+
 }
 

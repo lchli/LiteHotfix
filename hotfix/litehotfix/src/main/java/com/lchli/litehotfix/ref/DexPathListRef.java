@@ -1,11 +1,13 @@
 package com.lchli.litehotfix.ref;
 
 import android.annotation.TargetApi;
+import android.util.Log;
 
 import com.lchli.litehotfix.util.ReflectUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ public class DexPathListRef {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
     public static Object newInstance(Class[] parameterTypes, Object... args) throws Exception {
@@ -37,14 +40,82 @@ public class DexPathListRef {
                 .invoke(dexPathList, className, suppressedExceptions);
     }
 
-    public static Object[] dexElements(Object dexPathList) throws Exception {
+    public static Object[] dexElements(Object dexPathList) {
+        try {
+            Object[] dexElements = (Object[]) ReflectUtils.findField(clazz, "dexElements").get(dexPathList);
+            if (dexElements != null) {
+                return dexElements;
+            }
 
-        return (Object[]) ReflectUtils.findField(clazz, "dexElements").get(dexPathList);
+            Field f = findDexElementsField(dexPathList);
+            if (f == null) {
+                return null;
+            }
+
+            return (Object[]) f.get(dexPathList);
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    public static void set_dexElements(Object dexPathList, Object[] dexElements) throws Exception {
+    private static Field findDexElementsField(Object dexPathList) {
+        try {
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field f : fields) {
+                f.setAccessible(true);
+                Object mayDexElements = f.get(dexPathList);
+                if (isDexElements(mayDexElements)) {
+                    return f;
+                }
 
-        ReflectUtils.findField(clazz, "dexElements").set(dexPathList, dexElements);
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private static boolean isDexElements(Object mayDexElements) {
+        if (!(mayDexElements instanceof Object[])) {
+            return false;
+        }
+        Object[] may = (Object[]) mayDexElements;
+        if (may.length <= 0) {
+            return false;
+        }
+        Object first = may[0];
+        if (first == null) {
+            return false;
+        }
+
+        if (ElementRef.clazz.isAssignableFrom(first.getClass())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean set_dexElements(Object dexPathList, Object[] dexElements) {
+        try {
+            Field f = ReflectUtils.findField(clazz, "dexElements");
+            if (f == null) {
+                f = findDexElementsField(dexPathList);
+            }
+            if (f == null) {
+                return false;
+            }
+            f.setAccessible(true);
+            f.set(dexPathList, dexElements);
+
+            return true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @TargetApi(14)
@@ -70,9 +141,74 @@ public class DexPathListRef {
             e.printStackTrace();
             try {
                 return makeDexElements19_23(files, optimizedDirectory, suppressedExceptions);
-            }catch (Throwable ee){
+            } catch (Throwable ee) {
                 return makeDexElements14_18(files, optimizedDirectory);
             }
+        }
+    }
+
+    private static Method findMakeDexElementsMethod() {
+        try {
+            Method[] methods = clazz.getDeclaredMethods();
+            for (Method f : methods) {
+                if (f.getName().equals("makeDexElements")) {
+                    return f;
+                }
+
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Object[] makeDexElementsAll(List<File> dexfiles, File optimizedDirectory) {
+        try {
+            Method m = findMakeDexElementsMethod();
+            if (m == null) {
+                return null;
+            }
+            m.setAccessible(true);
+
+            Class<?>[] ptypes = m.getParameterTypes();
+            Log.e("dex", ptypes.toString());
+
+            List<Object> params = new ArrayList<>();
+
+            for (Class<?> pc : ptypes) {
+                if (List.class.isAssignableFrom(pc))
+                    params.add(dexfiles);
+                else if (File.class.isAssignableFrom(pc))
+                    params.add(optimizedDirectory);
+                else
+                    params.add(null);
+            }
+
+            return (Object[]) m.invoke(null, params.toArray());
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+
+    }
+
+    public static boolean addDexPath(Object dexPathList, String dexPath, File optimizedDirectory) {
+        try {
+            Method m = ReflectUtils.findMethod(clazz, "addDexPath", String.class, File.class);
+            if (m == null) {
+                return false;
+            }
+            m.invoke(dexPathList, dexPath, optimizedDirectory);
+
+            return true;
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

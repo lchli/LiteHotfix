@@ -13,4 +13,11 @@ public class NewP {
     public static void run(Context context){
         Toast.makeText(context,"p ",1).show();
     }
+
+    protected int rInt(){
+        return 1;
+    }
+    protected NewP this$(){
+        return this;
+    }
 }

@@ -6,13 +6,16 @@ package com.lchli.litehotfix.util;
 
 public class ReflectTool {
 
-    public static Object callMethod(String classname,String methodName,Object target,Object[] args){
-return null;
+    public static Object callMethod(String classname, String methodName, Object target, Object[] args) {
+        return null;
     }
 
 
+    public static Object callMethod(String classname, String methodName, Object[] args) {
+        return null;
+    }
 
-    public static Object callMethod(String classname,String methodName,Object[] args){
-return null;
+    public static Object callSuper(String methodName, Object target,Object[] args) {
+        return null;
     }
 }

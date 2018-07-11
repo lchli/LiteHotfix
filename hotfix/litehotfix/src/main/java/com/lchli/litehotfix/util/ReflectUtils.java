@@ -14,7 +14,7 @@ import static android.R.attr.name;
 
 public class ReflectUtils {
 
-    public static Field findField(Class clazz, String name) throws NoSuchFieldException {
+    public static Field findField(Class clazz, String name) {
 
         while (clazz != null) {
             try {
@@ -27,7 +27,8 @@ public class ReflectUtils {
                 clazz = clazz.getSuperclass();
             }
         }
-        throw new NoSuchFieldException("Field " + name + " not found in " + clazz);
+
+        return null;
     }
 
     public static Method findMethod(Class clazz, String name, Class... parameterTypes) throws NoSuchMethodException {
@@ -69,9 +70,11 @@ public class ReflectUtils {
 
                 original.getClass().getComponentType(), original.length + extraElements.length);
 
-        System.arraycopy(original, 0, combined, 0, original.length);
+       // System.arraycopy(original, 0, combined, 0, original.length);
+        System.arraycopy(extraElements, 0, combined, 0, extraElements.length);
 
-        System.arraycopy(extraElements, 0, combined, original.length, extraElements.length);
+       // System.arraycopy(extraElements, 0, combined, original.length, extraElements.length);
+        System.arraycopy(original, 0, combined, extraElements.length, original.length);
 
         return combined;
 
