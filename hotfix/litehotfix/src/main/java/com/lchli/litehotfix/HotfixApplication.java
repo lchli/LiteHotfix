@@ -2,12 +2,13 @@ package com.lchli.litehotfix;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.util.Log;
 
 import com.lchli.litehotfix.util.ReflectUtils;
 import com.lchli.litehotfix.util.ResUtil;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 /**
  * Created by lichenghang on 2017/4/8.
@@ -15,40 +16,39 @@ import java.lang.reflect.Method;
 
 public class HotfixApplication extends Application {
 
-    private static final String RES_APP_LIKE = "res_app_like";
+    private static final String RES_APP_LIKE = "baf_hotfix_res_app_like";
 
-    private Application mApplicationLike;
+    private ApplicationLike mApplicationLike;
 
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                e.printStackTrace();
-            }
-        });
 
         HotFix.instance().init(base);
 
+        callAttachBaseContext(base);
+    }
+
+    private void callAttachBaseContext(Context base) {
         try {
-            String R_string_class_name = base.getPackageName() + ".R$string";
+            final String R_string_class_name = base.getPackageName() + ".R$string";
+
             int id = ResUtil.getResourceId(RES_APP_LIKE, Class.forName(R_string_class_name, false, getClassLoader()));
             if (id < 0) {
-                throw new HotFixException("you must declare ApplicationLike class name in your string.xml with key=res_app_like");
+                throw new HotFixException("you must declare ApplicationLike class name in your string.xml with key=baf_hotfix_res_app_like");
             }
             String appLikeClassName = base.getString(id);
+            Log.e("hotfix","appLikeClassName:"+appLikeClassName);
+
 
             Class appLikeCls = Class.forName(appLikeClassName, false, getClassLoader());
-            Constructor structor = ReflectUtils.findConstructor(appLikeCls);
-            mApplicationLike = (Application) structor.newInstance();
 
-            Method m_attachBaseContext = ReflectUtils.findMethod(Application.class, "attachBaseContext", Context.class);
-            m_attachBaseContext.invoke(mApplicationLike,base);
+            Constructor structor = ReflectUtils.findConstructor(appLikeCls, Application.class);
+            mApplicationLike = (ApplicationLike) structor.newInstance(this);
 
+            mApplicationLike.attachBaseContext(base);
 
-
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             throw new HotFixException(e);
         }
@@ -57,10 +57,45 @@ public class HotfixApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
         if (mApplicationLike != null) {
             mApplicationLike.onCreate();
         }
     }
 
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
 
+        if (mApplicationLike != null) {
+            mApplicationLike.onLowMemory();
+        }
+    }
+
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+
+        if (mApplicationLike != null) {
+            mApplicationLike.onTerminate();
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+
+        if (mApplicationLike != null) {
+            mApplicationLike.onTrimMemory(level);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (mApplicationLike != null) {
+            mApplicationLike.onConfigurationChanged(newConfig);
+        }
+    }
 }

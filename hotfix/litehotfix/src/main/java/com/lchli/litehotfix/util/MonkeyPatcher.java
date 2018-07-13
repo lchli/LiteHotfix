@@ -10,14 +10,16 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-
+// TODO: 2018/7/11  //same with ali jiagu and google instant run.  tinker why not fix application.
+// FIXME: 2018/7/13 这种方式修复application会有兼容性问题，并且无法通过开关控制，所以建议使用tinker这种application like的方式。
+@Deprecated
 public class MonkeyPatcher {
 
     @SuppressWarnings("unchecked")  // Lots of conversions with generic types
     public static void monkeyPatchApplication(@Nullable Context context,
                                               @Nullable Application bootstrap,
-                                              @Nullable Application realApplication,
-                                              @Nullable String externalResourceFile) {
+                                              @Nullable Application realApplication
+                                             ) {
         /*
         The code seems to perform this:
         Application realApplication = the newly instantiated (in attachBaseContext) user app
@@ -127,8 +129,8 @@ public class MonkeyPatcher {
             }
             Field mApplication = loadedApkClass.getDeclaredField("mApplication");
             mApplication.setAccessible(true);
-            Field mResDir = loadedApkClass.getDeclaredField("mResDir");
-            mResDir.setAccessible(true);
+//            Field mResDir = loadedApkClass.getDeclaredField("mResDir");
+//            mResDir.setAccessible(true);
 
             // 10 doesn't have this field, 14 does. Fortunately, there are not many Honeycomb devices
             // floating around.
@@ -160,9 +162,6 @@ public class MonkeyPatcher {
                     if (mApplication.get(loadedApk) == bootstrap) {
                         if (realApplication != null) {
                             mApplication.set(loadedApk, realApplication);
-                        }
-                        if (externalResourceFile != null) {
-                            mResDir.set(loadedApk, externalResourceFile);
                         }
 
                         if (realApplication != null && mLoadedApk != null) {

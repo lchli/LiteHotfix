@@ -33,7 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lch.menote.Modified;
-import com.lch.menote.NewP;
+import com.lch.menote.NewP2;
 import com.lchli.litehotfix.HotFix;
 
 import java.util.ArrayList;
@@ -71,12 +71,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private View mProgressView;
     private View mLoginFormView;
 
+    public static Object access$super(LoginActivity target,String methoddes,Object...args){
+//        if(methoddes.contains("onCreate")){
+//            return super.onCreate(args[0]);
+//        }
+//        if(methoddes.contains("onRequestPermissionsResult")){
+//            return super.onRequestPermissionsResult(args[0],args[1],args[2]);
+//        }
+        return null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //SophixManager.getInstance().queryAndLoadNewPatch();
-       // Toast.makeText(this,"ffff",Toast.LENGTH_LONG).show();
-        NewP.run(this);
+       // Toast.makeText(this,"ffff 888888888888888888888",Toast.LENGTH_LONG).show();
+        NewP2.run(this);
 
         Log.e("appn",getApplication().toString());
         Log.e("appn",getApplicationInfo().name);
@@ -84,11 +94,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         Log.e("appn",getApplicationInfo().loadLabel(getPackageManager())+"");
 
 
-
         AppLike.handler.post(new Runnable() {
             @Override
             public void run() {
-                System.err.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+                System.err.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$8888");
 
             }
         });
